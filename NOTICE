@@ -1,0 +1,13 @@
+Plugflow
+Copyright 2026 The Plugflow contributors
+
+This product is based on the Workflow Builder Template
+(https://github.com/vercel-labs/workflow-builder-template),
+Copyright 2025 Vercel, Inc., licensed under the Apache License, Version 2.0.
+
+Files taken from that project have been modified. The canvas, node and
+control styling were redesigned, the Composio integration was added, and
+the project was renamed.
+
+Plugflow is an independent project. It is not affiliated with, sponsored by
+or endorsed by Vercel, Inc. or Composio.

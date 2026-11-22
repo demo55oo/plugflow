@@ -1,9 +1,9 @@
 {
-  "name": "ai-workflow-builder-template",
+  "name": "plugflow",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "A template for building your own AI-driven workflow automation platform",
+  "description": "Open-source workflow automation with 1,000+ integrations through Composio",
   "scripts": {
     "dev": "pnpm discover-plugins && next dev",
     "build": "tsx scripts/migrate-prod.ts && pnpm discover-plugins && next build",
@@ -18,7 +18,9 @@
     "discover-plugins": "tsx scripts/discover-plugins.ts",
     "create-plugin": "tsx scripts/create-plugin.ts",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "dev:webpack": "pnpm discover-plugins && next dev --webpack",
+    "db:local": "pglite-server --db=./.plugflow-db --port=54329 --max-connections=20"
   },
   "dependencies": {
     "@linear/sdk": "^63.2.0",
@@ -66,6 +68,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
+    "@electric-sql/pglite": "^0.5.17",
+    "@electric-sql/pglite-socket": "^0.2.20",
     "@inquirer/prompts": "^8.0.1",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",

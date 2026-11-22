@@ -17,7 +17,7 @@ import { mono, sans } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "AI Workflow Builder - Visual Workflow Automation",
+  title: "Plugflow - Open-source workflow automation",
   description:
     "Build powerful AI-driven workflow automations with a visual, node-based editor. Built with Next.js and React Flow.",
 };

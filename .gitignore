@@ -53,3 +53,7 @@ lib/types/integration.ts
 lib/codegen-registry.ts
 lib/step-registry.ts
 lib/output-display-configs.ts
+
+# local embedded database
+.plugflow-db
+!.env.example

@@ -278,7 +278,7 @@ export const ActionNode = memo(({ data, selected, id }: ActionNodeProps) => {
         status={status}
       >
         {isDisabled && (
-          <div className="absolute top-2 left-2 rounded-full bg-gray-500/50 p-1">
+          <div className="-top-2 -left-2 absolute z-10 rounded-full bg-gray-500 p-1">
             <EyeOff className="size-3.5 text-white" />
           </div>
         )}
@@ -351,14 +351,14 @@ export const ActionNode = memo(({ data, selected, id }: ActionNodeProps) => {
     >
       {/* Disabled badge in top left */}
       {isDisabled && (
-        <div className="absolute top-2 left-2 rounded-full bg-gray-500/50 p-1">
+        <div className="-top-2 -left-2 absolute z-10 rounded-full bg-gray-500 p-1">
           <EyeOff className="size-3.5 text-white" />
         </div>
       )}
 
       {/* Integration warning badge in top left (only if not disabled) */}
       {!isDisabled && integrationMissing && (
-        <div className="absolute top-2 left-2 rounded-full bg-orange-500/50 p-1">
+        <div className="-top-2 -left-2 absolute z-10 rounded-full bg-orange-500 p-1">
           <AlertTriangle className="size-3.5 text-white" />
         </div>
       )}

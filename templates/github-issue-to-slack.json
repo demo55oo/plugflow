@@ -1,0 +1,64 @@
+{
+  "name": "New GitHub issue to Slack",
+  "description": "When a webhook reports a new GitHub issue, post a summary to a Slack channel. Both steps run through Composio, so GitHub and Slack only need to be connected once in your Composio account.",
+  "nodes": [
+    {
+      "id": "trigger-1",
+      "type": "trigger",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "Issue webhook",
+        "description": "Receives the issue payload",
+        "type": "trigger",
+        "config": { "triggerType": "Webhook" },
+        "status": "idle"
+      }
+    },
+    {
+      "id": "action-1",
+      "type": "action",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Get issue",
+        "description": "Composio",
+        "type": "action",
+        "config": {
+          "actionType": "composio/execute-tool",
+          "toolSlug": "GITHUB_GET_AN_ISSUE",
+          "toolArguments": "{\"owner\": \"{{@trigger-1:Issue webhook.owner}}\", \"repo\": \"{{@trigger-1:Issue webhook.repo}}\", \"issue_number\": {{@trigger-1:Issue webhook.issue_number}}}"
+        },
+        "status": "idle"
+      }
+    },
+    {
+      "id": "action-2",
+      "type": "action",
+      "position": { "x": 600, "y": 200 },
+      "data": {
+        "label": "Post to Slack",
+        "description": "Composio",
+        "type": "action",
+        "config": {
+          "actionType": "composio/execute-tool",
+          "toolSlug": "SLACK_SEND_MESSAGE",
+          "toolArguments": "{\"channel\": \"#issues\", \"text\": \"New issue: {{@action-1:Get issue.data.title}}\"}"
+        },
+        "status": "idle"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "source": "trigger-1",
+      "target": "action-1",
+      "type": "default"
+    },
+    {
+      "id": "edge-2",
+      "source": "action-1",
+      "target": "action-2",
+      "type": "default"
+    }
+  ]
+}
