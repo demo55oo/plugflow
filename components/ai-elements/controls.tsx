@@ -1,74 +1,68 @@
 "use client";
 
 import { useReactFlow } from "@xyflow/react";
-import { ZoomIn, ZoomOut, Maximize2, MapPin, MapPinXInside } from "lucide-react";
 import { useAtom } from "jotai";
+import {
+  type LucideIcon,
+  MapPin,
+  MapPinXInside,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { showMinimapAtom } from "@/lib/workflow-store";
+
+type ControlButtonProps = {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+};
+
+const ControlButton = ({ icon: Icon, label, onClick }: ControlButtonProps) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        aria-label={label}
+        className="rounded-md border hover:bg-black/5 disabled:opacity-100 dark:hover:bg-white/5 disabled:[&>svg]:text-muted-foreground"
+        onClick={onClick}
+        size="icon"
+        variant="secondary"
+      >
+        <Icon className="size-4" />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent side="top">{label}</TooltipContent>
+  </Tooltip>
+);
 
 export const Controls = () => {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const [showMinimap, setShowMinimap] = useAtom(showMinimapAtom);
 
-  const handleZoomIn = () => {
-    zoomIn();
-  };
-
-  const handleZoomOut = () => {
-    zoomOut();
-  };
-
-  const handleFitView = () => {
-    fitView({ padding: 0.2, duration: 300 });
-  };
-
-  const handleToggleMinimap = () => {
-    setShowMinimap(!showMinimap);
-  };
-
   return (
-    <ButtonGroup orientation="vertical">
-      <Button
-        className="border hover:bg-black/5 disabled:opacity-100 dark:hover:bg-white/5 disabled:[&>svg]:text-muted-foreground"
-        onClick={handleZoomIn}
-        size="icon"
-        title="Zoom in"
-        variant="secondary"
-      >
-        <ZoomIn className="size-4" />
-      </Button>
-      <Button
-        className="border hover:bg-black/5 disabled:opacity-100 dark:hover:bg-white/5 disabled:[&>svg]:text-muted-foreground"
-        onClick={handleZoomOut}
-        size="icon"
-        title="Zoom out"
-        variant="secondary"
-      >
-        <ZoomOut className="size-4" />
-      </Button>
-      <Button
-        className="border hover:bg-black/5 disabled:opacity-100 dark:hover:bg-white/5 disabled:[&>svg]:text-muted-foreground"
-        onClick={handleFitView}
-        size="icon"
-        title="Fit view"
-        variant="secondary"
-      >
-        <Maximize2 className="size-4" />
-      </Button>
-      <Button
-        className="border hover:bg-black/5 disabled:opacity-100 dark:hover:bg-white/5 disabled:[&>svg]:text-muted-foreground"
-        onClick={handleToggleMinimap}
-        size="icon"
-        title={showMinimap ? "Hide minimap" : "Show minimap"}
-        variant="secondary"
-      >
-        {showMinimap ? (
-          <MapPin className="size-4" />
-        ) : (
-          <MapPinXInside className="size-4" />
-        )}
-      </Button>
-    </ButtonGroup>
+    <div className="flex flex-row gap-2">
+      <ControlButton icon={ZoomIn} label="Zoom in" onClick={() => zoomIn()} />
+      <ControlButton
+        icon={ZoomOut}
+        label="Zoom out"
+        onClick={() => zoomOut()}
+      />
+      <ControlButton
+        icon={Maximize2}
+        label="Fit to view"
+        onClick={() => fitView({ padding: 0.2, duration: 300 })}
+      />
+      <ControlButton
+        icon={showMinimap ? MapPin : MapPinXInside}
+        label={showMinimap ? "Hide minimap" : "Show minimap"}
+        onClick={() => setShowMinimap(!showMinimap)}
+      />
+    </div>
   );
 };
