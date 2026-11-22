@@ -18,6 +18,7 @@ import {
   type ActionConfigFieldBase,
   isFieldGroup,
 } from "@/plugins";
+import { ComposioToolConfig } from "./composio-tool-config";
 import { SchemaBuilder, type SchemaField } from "./schema-builder";
 
 type FieldProps = {
@@ -225,6 +226,21 @@ export function ActionConfigRenderer({
   onUpdateConfig,
   disabled,
 }: ActionConfigRendererProps) {
+  // Composio tools picked from the steps panel get a form generated from
+  // the tool's own input schema instead of the generic slug and JSON fields.
+  if (
+    config.actionType === "composio/execute-tool" &&
+    typeof config.toolkitSlug === "string"
+  ) {
+    return (
+      <ComposioToolConfig
+        config={config}
+        disabled={disabled}
+        onUpdateConfig={onUpdateConfig}
+      />
+    );
+  }
+
   return (
     <>
       {fields.map((field) => {

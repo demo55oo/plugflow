@@ -1,19 +1,35 @@
-# Plugflow
+<p align="center">
+  <img src="docs/logo.svg" width="96" alt="Plugflow logo" />
+</p>
 
-Open-source workflow automation where the integrations already work. Build a workflow on a canvas, and run any tool from 1,000+ apps through [Composio](https://composio.dev) without registering a single OAuth app.
+<h1 align="center">Plugflow</h1>
 
-![Plugflow canvas](docs/screenshot.png)
+<p align="center">
+  The open-source workflow builder built on <a href="https://composio.dev">Composio</a>.<br />
+  Drag 1,000+ apps onto a canvas. No OAuth apps to register, no integrations to write.
+</p>
 
-> **Status: early.** The canvas, the workflow engine and a generic Composio step work today. The tool browser, Composio triggers and the agent step are on the roadmap below.
+![Plugflow canvas with the Composio steps panel](docs/screenshot.png)
 
-## Why
+> **Status: early.** Browsing apps, adding their actions as nodes, connecting accounts and running workflows all work today. Triggers from apps and the agent step are on the roadmap below.
 
-Self-hosting an automation tool usually means creating your own OAuth app for every service you want to connect: Google, Slack, GitHub, each with its own console, redirect URLs and review process. Plugflow hands that part to Composio. You connect an account once in Composio, and every workflow can use it.
+## Why Plugflow
 
-- **One key, 1,000+ apps.** Add a Composio API key and call any Composio tool from a workflow step.
+Self-hosting an automation tool usually means creating your own OAuth app for every service you want to connect: Google, Slack, GitHub, each with its own console, redirect URLs and review process. Plugflow hands that whole layer to Composio.
+
+- **Built on Composio.** Every app and action in the steps panel comes live from Composio's catalog, so new tools appear in Plugflow the day Composio ships them.
+- **One key, 1,000+ apps.** Paste a Composio API key and browse Gmail, Slack, GitHub, Notion and the rest from the sidebar.
+- **Forms, not JSON.** Pick an action and Plugflow builds its form from the tool's own schema, with required fields first.
+- **Connect in two clicks.** Press Connect on an app and Composio's hosted page handles the sign-in. Plugflow never sees the tokens.
+- **Runs with no accounts.** An embedded database and anonymous sign-in mean it works before you have signed up for anything but Composio.
 - **Apache-2.0.** Use it, embed it, host it for others.
-- **Runs with no accounts.** An embedded database and anonymous sign-in mean `pnpm dev` works before you have signed up for anything.
-- **Real execution.** Triggers, branching, run history and per-step logs, built on the [Workflow DevKit](https://useworkflow.dev).
+
+## How it works
+
+1. Open the **Steps** panel on the left and pick an app.
+2. Click an action. It lands on the canvas, already wired to the previous step.
+3. Fill in the generated form. Type `{{` to insert a value from an earlier step.
+4. Press Run. Each step executes through Composio, and the Runs tab shows the input, output and timing of every step.
 
 ## Quick start
 
@@ -48,33 +64,27 @@ pnpm dev
 
 Open http://localhost:3000. On Windows, use `pnpm dev:webpack` instead of `pnpm dev`.
 
-The embedded database is meant for trying Plugflow out. For anything you depend on, point `DATABASE_URL` at a real Postgres database.
+The embedded database is meant for trying Plugflow out. For anything you depend on, point `DATABASE_URL` at a real Postgres database and remove `DATABASE_POOL_MAX`.
 
-## Connect Composio
+## Add your Composio key
 
 1. Create a free account at [platform.composio.dev](https://platform.composio.dev) and copy your API key.
-2. In Composio, connect the apps you want to use (for example GitHub and Slack). Note the user ID you connected them under; if you did not choose one, it is `default`.
-3. In Plugflow, add a step, choose **Composio > Execute Tool**, and add a connection with your API key when prompted.
+2. Open Plugflow. The Steps panel asks for the key the first time; paste it and press Save. It is stored encrypted in your own database.
+3. Pick an app and press **Connect** to sign in to it through Composio.
 
-Then fill in the step:
-
-| Field | What to enter |
-|---|---|
-| Tool | The tool's slug from the [Composio toolkit docs](https://docs.composio.dev/toolkits), for example `GITHUB_CREATE_AN_ISSUE` |
-| Arguments (JSON) | A JSON object of the tool's inputs. Use `{{` to insert values from earlier steps |
-| User ID | Leave empty unless one workflow acts for several Composio users |
-
-The step returns `data` (whatever the tool returned) and `logId` (the Composio execution log, useful when a call fails).
+If you run Plugflow only for yourself, you can instead set `COMPOSIO_API_KEY` in `.env.local` and skip step 2.
 
 ## Where each key goes
 
 | Key | Where to get it | Where it goes |
 |---|---|---|
-| Composio API key | [platform.composio.dev](https://platform.composio.dev) | In the app, on the Composio connection. Stored encrypted in your database |
-| `DATABASE_URL` | Nothing to get for local use; the default in `.env.example` points at `pnpm db:local`. For production, any Postgres provider | `.env.local` |
+| Composio API key | [platform.composio.dev](https://platform.composio.dev) | The Steps panel in the app, or `COMPOSIO_API_KEY` in `.env.local` |
+| `DATABASE_URL` | Nothing to get for local use; the default points at `pnpm db:local`. For production, any Postgres provider | `.env.local` |
 | `BETTER_AUTH_SECRET` | Generate it yourself | `.env.local` |
 | `INTEGRATION_ENCRYPTION_KEY` | Generate it yourself | `.env.local` |
 | `AI_GATEWAY_API_KEY` | Optional, from [Vercel AI Gateway](https://vercel.com/ai-gateway). Only for the AI steps | `.env.local` |
+
+Never commit `.env.local`. It is ignored by git.
 
 ## Templates
 
@@ -82,12 +92,11 @@ Starter workflows live in [`templates/`](templates). The first one, `github-issu
 
 ## Roadmap
 
-- Tool browser: pick an app and a tool from a list, with a form generated from the tool's input schema, instead of typing a slug and JSON
-- Connect apps from inside Plugflow
 - Composio triggers (new email, new issue, new message) as workflow triggers
-- Agent step that can choose among Composio tools
-- One-click template import
-- Docker image
+- Agent step that chooses among Composio tools
+- Pick values from an earlier step's real output when filling a form
+- One-click template import and a template gallery
+- Docker image and one-click deploy
 
 ## Contributing
 
@@ -102,4 +111,4 @@ pnpm fix
 
 Plugflow is licensed under [Apache-2.0](LICENSE). It is based on Vercel's [Workflow Builder Template](https://github.com/vercel-labs/workflow-builder-template); see [NOTICE](NOTICE). The canvas design is by Salaheddine Fikri.
 
-Plugflow is an independent project and is not affiliated with Vercel or Composio.
+Plugflow is an independent project. It is built on Composio's public API and is not affiliated with or endorsed by Composio or Vercel.

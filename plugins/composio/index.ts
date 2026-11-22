@@ -50,10 +50,7 @@ const composioPlugin: IntegrationPlugin = {
       category: "Composio",
       stepFunction: "composioExecuteToolStep",
       stepImportPath: "execute-tool",
-      outputFields: [
-        { field: "data", description: "Data returned by the tool" },
-        { field: "logId", description: "Composio execution log ID" },
-      ],
+      outputFields: [],
       configFields: [
         {
           key: "toolSlug",

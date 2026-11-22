@@ -46,9 +46,9 @@ export const TriggerNode = memo(({ data, selected }: TriggerNodeProps) => {
       {status && status !== "idle" && status !== "running" && (
         <div
           className={cn(
-            "absolute top-2 right-2 z-10 rounded-full p-1",
-            status === "success" && "bg-green-500/50",
-            status === "error" && "bg-red-500/50"
+            "-top-2 -right-2 absolute z-10 rounded-full p-1",
+            status === "success" && "bg-green-500",
+            status === "error" && "bg-red-500"
           )}
         >
           {status === "success" && (

@@ -164,9 +164,9 @@ const StatusBadge = ({
   return (
     <div
       className={cn(
-        "absolute top-2 right-2 rounded-full p-1",
-        status === "success" && "bg-green-500/50",
-        status === "error" && "bg-red-500/50"
+        "-top-2 -right-2 absolute z-10 rounded-full p-1",
+        status === "success" && "bg-green-500",
+        status === "error" && "bg-red-500"
       )}
     >
       {status === "success" && (
@@ -373,7 +373,18 @@ export const ActionNode = memo(({ data, selected, id }: ActionNodeProps) => {
           />
         ) : (
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-            {getProviderLogo(actionType)}
+            {typeof data.config?.toolkitLogo === "string" ? (
+              // biome-ignore lint/performance/noImgElement: remote logo from Composio, size is fixed
+              <img
+                alt=""
+                className="size-6 rounded bg-white object-contain p-0.5"
+                height={24}
+                src={data.config.toolkitLogo}
+                width={24}
+              />
+            ) : (
+              getProviderLogo(actionType)
+            )}
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">

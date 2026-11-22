@@ -41,7 +41,7 @@
         "config": {
           "actionType": "composio/execute-tool",
           "toolSlug": "SLACK_SEND_MESSAGE",
-          "toolArguments": "{\"channel\": \"#issues\", \"text\": \"New issue: {{@action-1:Get issue.data.title}}\"}"
+          "toolArguments": "{\"channel\": \"#issues\", \"text\": \"New issue: {{@action-1:Get issue.title}}\"}"
         },
         "status": "idle"
       }

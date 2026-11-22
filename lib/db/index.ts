@@ -40,9 +40,13 @@ const globalForDb = globalThis as unknown as {
   db: PostgresJsDatabase<typeof schema> | undefined;
 };
 
+// The embedded local database (pnpm db:local) handles one connection
+// reliably, so DATABASE_POOL_MAX=1 is set for it in .env.example.
+const poolMax = Number(process.env.DATABASE_POOL_MAX) || 10;
+
 // For queries - reuse connection in development
 const queryClient =
-  globalForDb.queryClient ?? postgres(connectionString, { max: 10 });
+  globalForDb.queryClient ?? postgres(connectionString, { max: poolMax });
 export const db = globalForDb.db ?? drizzle(queryClient, { schema });
 
 if (process.env.NODE_ENV !== "production") {

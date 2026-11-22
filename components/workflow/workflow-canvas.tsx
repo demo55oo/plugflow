@@ -52,6 +52,7 @@ import {
   useContextMenuHandlers,
   WorkflowContextMenu,
 } from "./workflow-context-menu";
+import { WorkflowSidebar } from "./workflow-sidebar";
 
 const nodeTemplates = [
   {
@@ -572,6 +573,7 @@ export function WorkflowCanvas() {
           <MiniMap bgColor="var(--sidebar)" nodeStrokeColor="var(--border)" />
         )}
       </Canvas>
+      {!isGenerating && <WorkflowSidebar />}
 
       {/* AI Prompt */}
       {currentWorkflowId && <AIPrompt workflowId={currentWorkflowId} />}

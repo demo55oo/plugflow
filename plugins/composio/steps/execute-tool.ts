@@ -15,10 +15,9 @@ type ComposioExecuteResponse = {
   log_id?: string;
 };
 
-type ExecuteToolResult = {
-  data: Record<string, unknown>;
-  logId?: string;
-};
+type ExecuteToolResult =
+  | { success: true; data: Record<string, unknown> }
+  | { success: false; error: { message: string } };
 
 export type ComposioExecuteToolCoreInput = {
   toolSlug: string;
@@ -57,6 +56,82 @@ function parseArguments(
   );
 }
 
+const ARGUMENT_PREFIX = "arg__";
+
+type ToolSchema = {
+  input_parameters?: {
+    properties?: Record<string, { type?: string | string[] }>;
+  };
+};
+
+function schemaType(type: string | string[] | undefined): string | undefined {
+  return Array.isArray(type) ? type.find((item) => item !== "null") : type;
+}
+
+function coerceValue(value: unknown, type: string | undefined): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (type === "integer" || type === "number") {
+    const parsed = Number(trimmed);
+    return Number.isNaN(parsed) ? value : parsed;
+  }
+  if (type === "boolean") {
+    return trimmed.toLowerCase() === "true";
+  }
+  if (type === "array" || type === "object") {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+/**
+ * Collect the per-field arguments written by the tool form (arg__name keys)
+ * and convert each one to the type the tool's schema expects.
+ */
+async function collectFieldArguments(
+  input: Record<string, unknown>,
+  toolSlug: string,
+  apiKey: string
+): Promise<Record<string, unknown>> {
+  const entries = Object.entries(input).filter(
+    ([key, value]) =>
+      key.startsWith(ARGUMENT_PREFIX) &&
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+  );
+  if (entries.length === 0) {
+    return {};
+  }
+
+  let properties: Record<string, { type?: string | string[] }> = {};
+  try {
+    const response = await fetch(
+      `${COMPOSIO_API_URL}/tools/${encodeURIComponent(toolSlug)}`,
+      { headers: { "x-api-key": apiKey } }
+    );
+    if (response.ok) {
+      const schema = (await response.json()) as ToolSchema;
+      properties = schema.input_parameters?.properties ?? {};
+    }
+  } catch {
+    // Without the schema, values are sent as entered
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of entries) {
+    const name = key.slice(ARGUMENT_PREFIX.length);
+    result[name] = coerceValue(value, schemaType(properties[name]?.type));
+  }
+  return result;
+}
+
 /**
  * Core logic - portable between app and export
  */
@@ -64,7 +139,7 @@ async function stepHandler(
   input: ComposioExecuteToolCoreInput,
   credentials: ComposioCredentials
 ): Promise<ExecuteToolResult> {
-  const apiKey = credentials.COMPOSIO_API_KEY;
+  const apiKey = credentials.COMPOSIO_API_KEY || process.env.COMPOSIO_API_KEY;
 
   if (!apiKey) {
     throw new Error("Composio API Key is not configured.");
@@ -80,6 +155,15 @@ async function stepHandler(
   const userId =
     input.userId?.trim() || credentials.COMPOSIO_USER_ID || DEFAULT_USER_ID;
 
+  const toolArguments = {
+    ...parseArguments(input.toolArguments),
+    ...(await collectFieldArguments(
+      input as Record<string, unknown>,
+      toolSlug,
+      apiKey
+    )),
+  };
+
   try {
     const response = await fetch(
       `${COMPOSIO_API_URL}/tools/execute/${encodeURIComponent(toolSlug)}`,
@@ -91,7 +175,7 @@ async function stepHandler(
         },
         body: JSON.stringify({
           user_id: userId,
-          arguments: parseArguments(input.toolArguments),
+          arguments: toolArguments,
         }),
       }
     );
@@ -107,12 +191,14 @@ async function stepHandler(
       throw new Error(result.error || "Tool execution failed");
     }
 
-    return {
-      data: result.data ?? {},
-      logId: result.log_id,
-    };
+    return { success: true, data: result.data ?? {} };
   } catch (error) {
-    throw new Error(`Failed to execute ${toolSlug}: ${getErrorMessage(error)}`);
+    return {
+      success: false,
+      error: {
+        message: `Failed to execute ${toolSlug}: ${getErrorMessage(error)}`,
+      },
+    };
   }
 }
 
