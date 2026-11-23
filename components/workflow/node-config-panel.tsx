@@ -51,7 +51,7 @@ import {
 import { findActionById } from "@/plugins";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ActionConfig } from "./config/action-config";
-import { ActionGrid } from "./config/action-grid";
+import { ActionPicker } from "./config/action-picker";
 
 import { TriggerConfig } from "./config/trigger-config";
 import { generateNodeCode } from "./utils/code-generators";
@@ -790,9 +790,22 @@ export const PanelInner = () => {
             !selectedNode.data.config?.actionType &&
             isOwner && (
               <div className="flex min-h-0 flex-1 flex-col px-4 pt-4">
-                <ActionGrid
+                <ActionPicker
                   disabled={isGenerating}
                   isNewlyCreated={selectedNode?.id === newlyCreatedNodeId}
+                  onPickStep={(step) => {
+                    updateNodeData({
+                      id: selectedNode.id,
+                      data: {
+                        label: step.label,
+                        description: step.description,
+                        config: step.config,
+                      },
+                    });
+                    if (selectedNode.id === newlyCreatedNodeId) {
+                      setNewlyCreatedNodeId(null);
+                    }
+                  }}
                   onSelectAction={(actionType) => {
                     handleUpdateConfig("actionType", actionType);
                     // Clear newly created tracking once action is selected

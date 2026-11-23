@@ -43,6 +43,7 @@ import {
 
 const NODE_GAP = 260;
 const SEARCH_DELAY_MS = 250;
+const RETURN_TOOLKIT_KEY = "plugflow:return-toolkit";
 
 type CoreStep = {
   id: string;
@@ -85,6 +86,12 @@ function useDebounced(value: string) {
   return debounced;
 }
 
+export type StepPick = {
+  label: string;
+  description: string;
+  config: Record<string, unknown>;
+};
+
 /**
  * Adds a step to the right of the selected node (or the last node) and
  * connects it, so the sidebar answers "what happens next?".
@@ -96,11 +103,7 @@ function useAddStep() {
   const setEdges = useSetAtom(edgesAtom);
 
   return useCallback(
-    (data: {
-      label: string;
-      description: string;
-      config: Record<string, unknown>;
-    }) => {
+    (data: StepPick) => {
       const realNodes = nodes.filter((node) => node.type !== "add");
       const anchor =
         realNodes.find((node) => node.id === selectedNodeId) ??
@@ -261,11 +264,12 @@ function MissingKey({ onSaved }: { onSaved: () => void }) {
 function ToolkitTools({
   toolkit,
   onBack,
+  onPick,
 }: {
   toolkit: ComposioToolkitSummary;
   onBack: () => void;
+  onPick: (step: StepPick) => void;
 }) {
-  const addStep = useAddStep();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search);
   const [tools, setTools] = useState<ComposioToolSummary[] | null>(null);
@@ -318,13 +322,20 @@ function ToolkitTools({
         toolkit.slug,
         window.location.href
       );
-      window.open(redirectUrl, "_blank", "noopener,noreferrer");
+      // Remember the open app so the panel returns to it after authorizing
+      try {
+        sessionStorage.setItem(RETURN_TOOLKIT_KEY, JSON.stringify(toolkit));
+      } catch {
+        // Storage can be unavailable; the panel then opens on the app list
+      }
+      // Go to Composio's connect page in this tab. A new tab opened after a
+      // network call is blocked as a pop-up by most browsers.
+      window.location.assign(redirectUrl);
     } catch (error) {
+      setConnecting(false);
       toast.error(
         error instanceof Error ? error.message : "Could not start connecting"
       );
-    } finally {
-      setConnecting(false);
     }
   };
 
@@ -335,7 +346,7 @@ function ToolkitTools({
     } catch {
       integrationId = undefined;
     }
-    addStep({
+    onPick({
       label: tool.name,
       description: toolkit.name,
       config: {
@@ -431,10 +442,13 @@ function ToolkitTools({
 
 function AppList({
   onSelect,
+  onPick,
+  showCore,
 }: {
   onSelect: (toolkit: ComposioToolkitSummary) => void;
+  onPick: (step: StepPick) => void;
+  showCore: boolean;
 }) {
-  const addStep = useAddStep();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search);
   const [toolkits, setToolkits] = useState<ComposioToolkitSummary[] | null>(
@@ -478,14 +492,16 @@ function AppList({
   }, [debouncedSearch, reloadToken]);
 
   const query = search.trim().toLowerCase();
-  const coreSteps = CORE_STEPS.filter((step) =>
-    step.label.toLowerCase().includes(query)
-  );
+  const coreSteps = showCore
+    ? CORE_STEPS.filter((step) => step.label.toLowerCase().includes(query))
+    : [];
 
   return (
     <>
       <div className="border-border/50 border-b p-3">
-        <p className="mb-2 font-medium text-sm">What happens next?</p>
+        <p className="mb-2 font-medium text-sm">
+          {showCore ? "What happens next?" : "Choose an app"}
+        </p>
         <div className="relative">
           <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 size-4 text-muted-foreground" />
           <Input
@@ -506,7 +522,7 @@ function AppList({
                   className={itemClass}
                   key={step.id}
                   onClick={() =>
-                    addStep({
+                    onPick({
                       label: step.label,
                       description: step.description,
                       config: { actionType: step.actionType },
@@ -563,9 +579,59 @@ function AppList({
   );
 }
 
+/**
+ * Browse Composio apps and their actions. Used by the steps panel on the
+ * left and by the action picker in the properties panel on the right.
+ */
+export function StepBrowser({
+  onPick,
+  showCore = false,
+}: {
+  onPick: (step: StepPick) => void;
+  showCore?: boolean;
+}) {
+  const [toolkit, setToolkit] = useState<ComposioToolkitSummary | null>(null);
+
+  // Reopen the app the user was connecting when they come back from Composio
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(RETURN_TOOLKIT_KEY);
+      if (saved) {
+        sessionStorage.removeItem(RETURN_TOOLKIT_KEY);
+        setToolkit(JSON.parse(saved) as ComposioToolkitSummary);
+      }
+    } catch {
+      // Ignore unreadable storage
+    }
+  }, []);
+
+  return (
+    <AnimatePresence initial={false} mode="wait">
+      <motion.div
+        animate={{ opacity: 1, x: 0 }}
+        className="flex min-h-0 flex-1 flex-col"
+        exit={{ opacity: 0, x: toolkit ? -12 : 12 }}
+        initial={{ opacity: 0, x: toolkit ? 12 : -12 }}
+        key={toolkit?.slug ?? "apps"}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+      >
+        {toolkit ? (
+          <ToolkitTools
+            onBack={() => setToolkit(null)}
+            onPick={onPick}
+            toolkit={toolkit}
+          />
+        ) : (
+          <AppList onPick={onPick} onSelect={setToolkit} showCore={showCore} />
+        )}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export function WorkflowSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [toolkit, setToolkit] = useState<ComposioToolkitSummary | null>(null);
+  const addStep = useAddStep();
 
   if (collapsed) {
     return (
@@ -604,22 +670,7 @@ export function WorkflowSidebar() {
           <PanelLeftClose className="size-4" />
         </button>
       </div>
-      <AnimatePresence initial={false} mode="wait">
-        <motion.div
-          animate={{ opacity: 1, x: 0 }}
-          className="flex min-h-0 flex-1 flex-col"
-          exit={{ opacity: 0, x: toolkit ? -12 : 12 }}
-          initial={{ opacity: 0, x: toolkit ? 12 : -12 }}
-          key={toolkit?.slug ?? "apps"}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-        >
-          {toolkit ? (
-            <ToolkitTools onBack={() => setToolkit(null)} toolkit={toolkit} />
-          ) : (
-            <AppList onSelect={setToolkit} />
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <StepBrowser onPick={addStep} showCore />
       <div className="border-border/50 border-t p-3">
         <ThemeToggle />
       </div>
